@@ -18,3 +18,6 @@ _fetch DAY:
 # Tests a given `DAY`
 test DAY:
 	cargo test day`printf "%02d" {{DAY}}`
+
+report:
+	open ./target/criterion/report/index.html

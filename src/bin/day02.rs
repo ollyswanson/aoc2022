@@ -1,35 +1,12 @@
+use aoc2022::day02::run;
+
 fn main() -> anyhow::Result<()> {
     let input = include_str!("../../inputs/day02.txt");
 
-    let score: i32 = input
-        .as_bytes()
-        .chunks(4)
-        .map(|chunk| {
-            let them = (chunk[0] - b'A') as i32;
-            let me = (chunk[2] - b'X') as i32;
+    let (part_1, part_2) = run(input);
 
-            let outcome = ((me - them).rem_euclid(3) + 1) % 3;
-
-            outcome * 3 + me + 1
-        })
-        .sum();
-
-    println!("Part 1: {}", score);
-
-    let score: i32 = input
-        .as_bytes()
-        .chunks(4)
-        .map(|chunk| {
-            let them = (chunk[0] - b'A') as i32;
-            let outcome = (chunk[2] - b'X') as i32;
-
-            let me = (them + outcome + 2) % 3;
-
-            outcome * 3 + me + 1
-        })
-        .sum();
-
-    println!("Part 2: {}", score);
+    println!("Part 1: {}", part_1);
+    println!("Part 2: {}", part_2);
 
     Ok(())
 }

@@ -9,3 +9,10 @@ edition = "2021"
 itertools = "0.10"
 anyhow = "1"
 chumsky = "0.8"
+
+[dev-dependencies]
+criterion = "0.4"
+
+[[bench]]
+name = "bench"
+harness = false

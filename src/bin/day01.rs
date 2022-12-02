@@ -1,21 +1,12 @@
-use itertools::Itertools;
+use aoc2022::day01::run;
 
 fn main() -> anyhow::Result<()> {
     let input = include_str!("../../inputs/day01.txt");
 
-    let calories: Vec<u32> = input
-        .split("\n\n")
-        .map(|section| {
-            section
-                .lines()
-                .filter_map(|line| line.parse::<u32>().ok())
-                .sum()
-        })
-        .sorted()
-        .collect();
+    let (part_1, part_2) = run(input);
 
-    println!("Part 1: {}", calories.last().unwrap());
-    println!("Part 2: {}", calories.iter().rev().take(3).sum::<u32>());
+    println!("Part 1: {}", part_1);
+    println!("Part 2: {}", part_2);
 
     Ok(())
 }

@@ -5,12 +5,12 @@ fn main() -> anyhow::Result<()> {
         .lines()
         .map(|line| {
             let bytes = line.as_bytes();
-            let them = bytes[0] - b'A';
-            let me = bytes[2] - b'X';
+            let them = (bytes[0] - b'A') as i32;
+            let me = (bytes[2] - b'X') as i32;
 
-            let outcome = ((me as i32 - them as i32).rem_euclid(3) + 1) % 3;
+            let outcome = ((me - them).rem_euclid(3) + 1) % 3;
 
-            outcome * 3 + me as i32 + 1
+            outcome * 3 + me + 1
         })
         .sum();
 
@@ -20,12 +20,12 @@ fn main() -> anyhow::Result<()> {
         .lines()
         .map(|line| {
             let bytes = line.as_bytes();
-            let them = bytes[0] - b'A';
-            let outcome = bytes[2] - b'X';
+            let them = (bytes[0] - b'A') as i32;
+            let outcome = (bytes[2] - b'X') as i32;
 
             let me = (them + outcome + 2) % 3;
 
-            outcome as i32 * 3 + me as i32 + 1
+            outcome * 3 + me + 1
         })
         .sum();
 

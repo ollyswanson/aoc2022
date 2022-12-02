@@ -28,3 +28,21 @@ pub fn run(input: &str) -> (i32, i32) {
 
     (score_1, score_2)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_works() {
+        let input = "\
+A Y
+B X
+C Z";
+
+        let (part_1, part_2) = run(input);
+
+        assert_eq!(15, part_1);
+        assert_eq!(12, part_2);
+    }
+}

@@ -8,14 +8,9 @@ fn main() -> anyhow::Result<()> {
             let them = bytes[0] - b'A';
             let me = bytes[2] - b'X';
 
-            let score = if them == me {
-                3
-            } else if (them + 1) % 3 == me {
-                6
-            } else {
-                0
-            };
-            score + me as i32 + 1
+            let outcome = ((me as i32 - them as i32).rem_euclid(3) + 1) % 3;
+
+            outcome * 3 + me as i32 + 1
         })
         .sum();
 
@@ -28,12 +23,7 @@ fn main() -> anyhow::Result<()> {
             let them = bytes[0] - b'A';
             let outcome = bytes[2] - b'X';
 
-            let me = match outcome % 3 {
-                0 => (them + 2) % 3,
-                1 => them,
-                2 => (them + 1) % 3,
-                _ => unreachable!(),
-            };
+            let me = (them + outcome + 2) % 3;
 
             outcome as i32 * 3 + me as i32 + 1
         })

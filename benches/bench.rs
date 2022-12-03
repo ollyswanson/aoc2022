@@ -14,5 +14,12 @@ pub fn day02(c: &mut Criterion) {
     c.bench_function("day02", |b| b.iter(|| run(black_box(input))));
 }
 
-criterion_group!(benches, day01, day02);
+pub fn day03(c: &mut Criterion) {
+    use aoc2022::day03::run;
+    let input = include_str!("../inputs/day03.txt");
+
+    c.bench_function("day03", |b| b.iter(|| run(black_box(input))));
+}
+
+criterion_group!(benches, day01, day02, day03);
 criterion_main!(benches);

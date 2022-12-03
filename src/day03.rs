@@ -10,7 +10,7 @@ fn process_input(input: &str) -> Vec<Rucksack> {
     input.lines().map(Rucksack::from_line).collect()
 }
 
-const fn ascii_letter_to_mask(byte: u8) -> usize {
+const fn ascii_letter_to_mask(byte: u8) -> u64 {
     if byte.is_ascii_lowercase() {
         1 << (byte - b'a')
     } else if byte.is_ascii_uppercase() {
@@ -20,13 +20,13 @@ const fn ascii_letter_to_mask(byte: u8) -> usize {
     }
 }
 
-const fn mask_to_priority(mask: usize) -> u32 {
-    64 - usize::leading_zeros(mask)
+const fn mask_to_priority(mask: u64) -> u32 {
+    64 - u64::leading_zeros(mask)
 }
 
 struct Rucksack {
-    left: usize,
-    right: usize,
+    left: u64,
+    right: u64,
 }
 
 impl Rucksack {
@@ -34,7 +34,7 @@ impl Rucksack {
         let bytes = line.as_bytes();
         let (left, right) = bytes.split_at(bytes.len() / 2);
 
-        let mask_fold = |acc: usize, &byte: &u8| acc | ascii_letter_to_mask(byte);
+        let mask_fold = |acc: u64, &byte: &u8| acc | ascii_letter_to_mask(byte);
 
         let left = left.iter().fold(0, mask_fold);
         let right = right.iter().fold(0, mask_fold);
@@ -42,11 +42,11 @@ impl Rucksack {
         Self { left, right }
     }
 
-    fn intersect(&self) -> usize {
+    fn intersect(&self) -> u64 {
         self.left & self.right
     }
 
-    fn union(&self) -> usize {
+    fn union(&self) -> u64 {
         self.left | self.right
     }
 }
@@ -65,7 +65,7 @@ fn part_2(rucksacks: &[Rucksack]) -> u32 {
         .map(Rucksack::union)
         .chunks(3)
         .into_iter()
-        .map(|chunk| chunk.fold(usize::MAX, |acc, mask| mask & acc))
+        .map(|chunk| chunk.fold(u64::MAX, |acc, mask| mask & acc))
         .map(mask_to_priority)
         .sum()
 }

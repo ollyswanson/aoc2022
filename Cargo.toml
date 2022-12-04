@@ -9,6 +9,7 @@ edition = "2021"
 itertools = "0.10"
 anyhow = "1"
 chumsky = "0.8"
+nom = "7"
 
 [dev-dependencies]
 criterion = { version = "0.4", features = ["html_reports"] }

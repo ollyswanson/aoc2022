@@ -60,13 +60,9 @@ fn parse_pair(input: &str) -> IResult<&str, Diff> {
 }
 
 fn parse_pairs(input: &str) -> anyhow::Result<Vec<Diff>> {
-    let (_, diffs) = all_consuming(many0(terminated(parse_pair, opt(alt((line_ending, eof))))))(
-        input,
-    )
-    .map_err(|e| -> anyhow::Error {
-        dbg!(e);
-        anyhow::anyhow!("Parse error!")
-    })?;
+    let (_, diffs) =
+        all_consuming(many0(terminated(parse_pair, opt(alt((line_ending, eof))))))(input)
+            .map_err(|_| anyhow::anyhow!("Parse error!"))?;
 
     Ok(diffs)
 }

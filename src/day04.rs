@@ -1,5 +1,5 @@
 use nom::branch::alt;
-use nom::character::complete::{char, i8, line_ending};
+use nom::character::complete::{char, line_ending, u8};
 use nom::combinator::{all_consuming, eof, map, opt};
 use nom::multi::many0;
 use nom::sequence::{separated_pair, terminated};
@@ -24,7 +24,7 @@ fn part_2(pairs: &[Diff]) -> usize {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Diff {
-    /// One section contains the other
+    /// One assignment contains the other
     SubOrSuper,
     /// The assignments overlap without being a sub or superset
     Overlap,
@@ -32,7 +32,7 @@ enum Diff {
     Disjoint,
 }
 
-fn diff_assignments(a: (i8, i8), b: (i8, i8)) -> Diff {
+fn diff_assignments(a: (u8, u8), b: (u8, u8)) -> Diff {
     use std::cmp::Ordering::*;
 
     if b.0 > a.1 || a.0 > b.1 {
@@ -49,8 +49,8 @@ fn diff_assignments(a: (i8, i8), b: (i8, i8)) -> Diff {
     }
 }
 
-fn parse_assignment(input: &str) -> IResult<&str, (i8, i8)> {
-    separated_pair(i8, char('-'), i8)(input)
+fn parse_assignment(input: &str) -> IResult<&str, (u8, u8)> {
+    separated_pair(u8, char('-'), u8)(input)
 }
 
 fn parse_pair(input: &str) -> IResult<&str, Diff> {

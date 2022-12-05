@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use anyhow::{anyhow, bail};
+use anyhow::anyhow;
 use nom::bytes::complete::tag;
 use nom::character::complete::{multispace0, u32};
 use nom::combinator::map;
@@ -37,24 +37,25 @@ impl<const N: usize> Supplies<N> {
     }
 
     #[inline]
-    fn move_with_queue(&mut self, instr: &CraneInstr) {
-        const BUFFER_SIZE: usize = 64;
-
+    fn move_as_queue(&mut self, instr: &CraneInstr) {
         let (from, to) = (instr.from - 1, instr.to - 1);
-        let mut buffer = [0u8; BUFFER_SIZE];
-        assert!(instr.amount <= BUFFER_SIZE);
 
-        for elem in buffer.iter_mut().take(instr.amount) {
-            if let Some(supply) = self.stacks[from].pop() {
-                *elem = supply
-            } else {
-                break;
-            }
+        // We don't need to do any work if from = to, returning early is required for safety
+        if from == to {
+            return;
         }
 
-        for supply in buffer.into_iter().rev().skip(BUFFER_SIZE - instr.amount) {
-            self.stacks[to].push(supply);
-        }
+        let len = self.stacks[from].len();
+        assert!(instr.amount <= len);
+        let offset = len - instr.amount;
+
+        let to: *mut _ = &mut self.stacks[to];
+        let from = &mut self.stacks[from];
+
+        // Safety: from != to
+        unsafe { (*to).extend_from_slice(&from[offset..]) }
+
+        from.truncate(offset);
     }
 
     fn move_supplies(&mut self, moves: &[CraneInstr]) {
@@ -65,7 +66,7 @@ impl<const N: usize> Supplies<N> {
 
     fn move_supplies_queue(&mut self, moves: &[CraneInstr]) {
         for instr in moves {
-            self.move_with_queue(instr);
+            self.move_as_queue(instr);
         }
     }
 
@@ -87,12 +88,8 @@ impl<const N: usize> FromStr for Supplies<N> {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut stacks = [(); N].map(|_| Vec::new());
 
-        for line in s.split('\n').rev().skip(1) {
-            if line.len() != 4 * N - 1 {
-                bail!("parse error");
-            }
-
-            for (i, chunk) in line.as_bytes().chunks(4).enumerate() {
+        for line in s.as_bytes().chunks(4 * N).rev().skip(1) {
+            for (i, chunk) in line.chunks(4).enumerate() {
                 let elf_crate = chunk[1];
                 if elf_crate.is_ascii_uppercase() {
                     stacks[i].push(elf_crate);
@@ -218,6 +215,6 @@ move 8 from 1 to 7";
 
         stacks.move_supplies_queue(&moves);
 
-        assert_eq!("CMZ", stacks.tops());
+        assert_eq!("MCD", stacks.tops());
     }
 }

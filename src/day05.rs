@@ -41,10 +41,10 @@ impl<const N: usize> Supplies<N> {
         const BUFFER_SIZE: usize = 64;
 
         let (from, to) = (instr.from - 1, instr.to - 1);
-        let mut queue = [0u8; BUFFER_SIZE];
+        let mut buffer = [0u8; BUFFER_SIZE];
         assert!(instr.amount <= BUFFER_SIZE);
 
-        for elem in queue.iter_mut().take(instr.amount) {
+        for elem in buffer.iter_mut().take(instr.amount) {
             if let Some(supply) = self.stacks[from].pop() {
                 *elem = supply
             } else {
@@ -52,8 +52,8 @@ impl<const N: usize> Supplies<N> {
             }
         }
 
-        for i in queue.into_iter().rev().skip(BUFFER_SIZE - instr.amount) {
-            self.stacks[to].push(i);
+        for supply in buffer.into_iter().rev().skip(BUFFER_SIZE - instr.amount) {
+            self.stacks[to].push(supply);
         }
     }
 

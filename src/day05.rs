@@ -1,3 +1,4 @@
+use std::cmp;
 use std::str::FromStr;
 
 use anyhow::anyhow;
@@ -46,8 +47,10 @@ impl<const N: usize> Supplies<N> {
         }
 
         let len = self.stacks[from].len();
-        assert!(instr.amount <= len);
-        let offset = len - instr.amount;
+
+        // Take at most the capacity of the stack
+        let amount = cmp::min(instr.amount, len);
+        let offset = len - amount;
 
         let to: *mut _ = &mut self.stacks[to];
         let from = &mut self.stacks[from];

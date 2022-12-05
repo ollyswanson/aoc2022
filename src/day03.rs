@@ -1,9 +1,9 @@
 use itertools::Itertools;
 
-pub fn run(input: &str) -> (u32, u32) {
+pub fn run(input: &str) -> anyhow::Result<(u32, u32)> {
     let rucksacks = process_input(input);
 
-    (part_1(&rucksacks), part_2(&rucksacks))
+    Ok((part_1(&rucksacks), part_2(&rucksacks)))
 }
 
 fn process_input(input: &str) -> Vec<Rucksack> {

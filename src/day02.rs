@@ -1,5 +1,5 @@
 // Could combine part 1 and 2 into one fold, but would make readability even worse
-pub fn run(input: &str) -> (i32, i32) {
+pub fn run(input: &str) -> anyhow::Result<(i32, i32)> {
     let score_1: i32 = input
         .as_bytes()
         .chunks(4)
@@ -26,7 +26,7 @@ pub fn run(input: &str) -> (i32, i32) {
         })
         .sum();
 
-    (score_1, score_2)
+    Ok((score_1, score_2))
 }
 
 #[cfg(test)]
@@ -40,7 +40,7 @@ A Y
 B X
 C Z";
 
-        let (part_1, part_2) = run(input);
+        let (part_1, part_2) = run(input).unwrap();
 
         assert_eq!(15, part_1);
         assert_eq!(12, part_2);

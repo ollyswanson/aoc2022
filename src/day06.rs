@@ -1,11 +1,12 @@
 pub fn run(input: &str) -> anyhow::Result<(usize, usize)> {
     Ok((
-        unique_run::<4>(input).unwrap(),
-        unique_run::<14>(input).unwrap(),
+        unique_run_big_o_n::<4>(input).unwrap(),
+        unique_run_big_o_n::<14>(input).unwrap(),
     ))
 }
 
-fn unique_run<const N: usize>(input: &str) -> Option<usize> {
+#[allow(dead_code)]
+fn unique_run_big_o_nk<const N: usize>(input: &str) -> Option<usize> {
     input
         .as_bytes()
         .windows(N)
@@ -17,6 +18,51 @@ fn unique_run<const N: usize>(input: &str) -> Option<usize> {
                 == N as u32
         })
         .map(|(i, _)| i + N)
+}
+
+fn unique_run_big_o_n<const N: usize>(input: &str) -> Option<usize> {
+    let bytes = input.as_bytes();
+
+    let mut letter_counts = [0u8; 26];
+    let mut unique_letters = 0usize;
+
+    for b in bytes.iter().take(N).copied().map(normalize_letter) {
+        letter_counts[b] += 1;
+
+        if letter_counts[b] == 1 {
+            unique_letters += 1;
+        }
+    }
+
+    if unique_letters == N {
+        return Some(N);
+    }
+
+    for i in N..bytes.len() {
+        let removed_letter = normalize_letter(bytes[i - N]);
+        let new_letter = normalize_letter(bytes[i]);
+
+        letter_counts[removed_letter] -= 1;
+        if letter_counts[removed_letter] == 0 {
+            unique_letters -= 1;
+        }
+
+        letter_counts[new_letter] += 1;
+        if letter_counts[new_letter] == 1 {
+            unique_letters += 1;
+        }
+
+        if unique_letters == N {
+            return Some(i + 1);
+        }
+    }
+
+    None
+}
+
+#[inline]
+const fn normalize_letter(b: u8) -> usize {
+    (b - b'a') as usize
 }
 
 #[cfg(test)]
@@ -33,7 +79,7 @@ mod tests {
         ];
 
         for (input, expected) in inputs {
-            assert_eq!(expected, unique_run::<4>(input).unwrap());
+            assert_eq!(expected, unique_run_big_o_n::<4>(input).unwrap());
         }
     }
 
@@ -48,7 +94,7 @@ mod tests {
         ];
 
         for (input, expected) in inputs {
-            assert_eq!(expected, unique_run::<14>(input).unwrap());
+            assert_eq!(expected, unique_run_big_o_n::<14>(input).unwrap());
         }
     }
 }

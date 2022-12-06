@@ -6,27 +6,29 @@ pub fn run(input: &str) -> anyhow::Result<(usize, usize)> {
 }
 
 #[allow(dead_code)]
-fn unique_run_big_o_nk<const N: usize>(input: &str) -> Option<usize> {
+/// K is the length of the unique run
+fn unique_run_big_o_nk<const K: usize>(input: &str) -> Option<usize> {
     input
         .as_bytes()
-        .windows(N)
+        .windows(K)
         .enumerate()
         .find(|(_, w)| {
             w.iter()
                 .fold(0u32, |mask, b| mask | (1 << (b - b'a')))
                 .count_ones()
-                == N as u32
+                == K as u32
         })
-        .map(|(i, _)| i + N)
+        .map(|(i, _)| i + K)
 }
 
-fn unique_run_big_o_n<const N: usize>(input: &str) -> Option<usize> {
+/// K is the length of the unique run
+fn unique_run_big_o_n<const K: usize>(input: &str) -> Option<usize> {
     let bytes = input.as_bytes();
 
     let mut letter_counts = [0u8; 26];
     let mut unique_letters = 0usize;
 
-    for b in bytes.iter().take(N).copied().map(normalize_letter) {
+    for b in bytes.iter().take(K).copied().map(normalize_letter) {
         letter_counts[b] += 1;
 
         if letter_counts[b] == 1 {
@@ -34,12 +36,12 @@ fn unique_run_big_o_n<const N: usize>(input: &str) -> Option<usize> {
         }
     }
 
-    if unique_letters == N {
-        return Some(N);
+    if unique_letters == K {
+        return Some(K);
     }
 
-    for i in N..bytes.len() {
-        let removed_letter = normalize_letter(bytes[i - N]);
+    for i in K..bytes.len() {
+        let removed_letter = normalize_letter(bytes[i - K]);
         let new_letter = normalize_letter(bytes[i]);
 
         letter_counts[removed_letter] -= 1;
@@ -52,7 +54,7 @@ fn unique_run_big_o_n<const N: usize>(input: &str) -> Option<usize> {
             unique_letters += 1;
         }
 
-        if unique_letters == N {
+        if unique_letters == K {
             return Some(i + 1);
         }
     }

@@ -21,50 +21,75 @@ fn unique_run_big_o_nk<const K: usize>(input: &str) -> Option<usize> {
         .map(|(i, _)| i + K)
 }
 
+#[inline]
+const fn normalize_letter(ascii_code: u8) -> usize {
+    (ascii_code - b'a') as usize
+}
+
+struct UniqueLetters {
+    counts: [u8; 26],
+    uniq: usize,
+}
+
+impl UniqueLetters {
+    fn new() -> Self {
+        Self {
+            counts: [0; 26],
+            uniq: 0,
+        }
+    }
+
+    /// Returns uniq after inserting a letter
+    #[inline]
+    fn insert(&mut self, ascii_code: u8) -> usize {
+        let entry = &mut self.counts[normalize_letter(ascii_code)];
+        *entry += 1;
+        if *entry == 1 {
+            self.uniq += 1;
+        }
+
+        self.uniq
+    }
+
+    /// Returns uniq after removing a letter
+    #[inline]
+    fn remove(&mut self, ascii_code: u8) -> usize {
+        let entry = &mut self.counts[normalize_letter(ascii_code)];
+        *entry -= 1;
+        if *entry == 0 {
+            self.uniq -= 1;
+        }
+
+        self.uniq
+    }
+}
+
 /// K is the length of the unique run
 fn unique_run_big_o_n<const K: usize>(input: &str) -> Option<usize> {
     let bytes = input.as_bytes();
 
-    let mut letter_counts = [0u8; 26];
-    let mut unique_letters = 0usize;
+    let mut uniq = UniqueLetters::new();
 
-    for b in bytes.iter().take(K).copied().map(normalize_letter) {
-        letter_counts[b] += 1;
-
-        if letter_counts[b] == 1 {
-            unique_letters += 1;
-        }
+    for &b in bytes.iter().take(K) {
+        uniq.insert(b);
     }
 
-    if unique_letters == K {
+    if uniq.uniq == K {
         return Some(K);
     }
 
     for i in K..bytes.len() {
-        let removed_letter = normalize_letter(bytes[i - K]);
-        let new_letter = normalize_letter(bytes[i]);
+        let to_remove = bytes[i - K];
+        let to_insert = bytes[i];
 
-        letter_counts[removed_letter] -= 1;
-        if letter_counts[removed_letter] == 0 {
-            unique_letters -= 1;
-        }
+        uniq.remove(to_remove);
 
-        letter_counts[new_letter] += 1;
-        if letter_counts[new_letter] == 1 {
-            unique_letters += 1;
-        }
-
-        if unique_letters == K {
+        if uniq.insert(to_insert) == K {
             return Some(i + 1);
         }
     }
 
     None
-}
-
-#[inline]
-const fn normalize_letter(b: u8) -> usize {
-    (b - b'a') as usize
 }
 
 #[cfg(test)]

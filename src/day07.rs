@@ -1,6 +1,3 @@
-use std::path::PathBuf;
-
-use hashbrown::HashMap;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{alpha1, multispace0};
@@ -10,72 +7,113 @@ use nom::sequence::{delimited, preceded, separated_pair};
 use nom::IResult;
 
 pub fn run(input: &str) -> anyhow::Result<(u64, u64)> {
-    let sizes = DirectorySizes::from_terminal_output(input)?;
+    let heap = DirectoryHeap::build_heap_from_input(input)?;
 
-    Ok((part_1(&sizes), part_2(&sizes)))
+    Ok((heap.part_1(), heap.part_2()))
 }
 
-struct DirectorySizes(HashMap<PathBuf, u64>);
+type HeapIdx = usize;
 
-impl DirectorySizes {
-    fn from_terminal_output(input: &str) -> anyhow::Result<Self> {
+struct DirectoryHeap {
+    /// A heap of file system entries, we only concern ourselves with tracking directories
+    heap: Vec<HeapEntry>,
+    /// The index of the most recently inserted `HeapEntry`
+    cursor: HeapIdx,
+}
+
+struct HeapEntry {
+    /// The parent of the directory, i.e. ".."
+    parent: HeapIdx,
+    /// The size of all of the files in the directory as well as the sizes of the subdirectories in
+    /// the directory
+    size: u64,
+}
+
+impl DirectoryHeap {
+    /// A new directory heap is always created with a root directory whose parent is itself
+    fn new() -> Self {
+        Self {
+            heap: vec![HeapEntry { parent: 0, size: 0 }],
+            cursor: 0,
+        }
+    }
+
+    /// Takes the `HeapIdx` of the entry's parent and returns the new entry's `HeapIdx`.
+    fn insert_entry(&mut self, parent: HeapIdx) -> HeapIdx {
+        self.heap.push(HeapEntry { parent, size: 0 });
+        self.cursor += 1;
+        self.cursor
+    }
+
+    /// Returns the heap index of the parent
+    fn get_parent(&self, idx: HeapIdx) -> HeapIdx {
+        self.heap[idx].parent
+    }
+
+    /// Takes the `HeapIdx` of the directory that we want to update. This function updates the size
+    /// of the entry and all of its parents up to root
+    fn update_size(&mut self, mut idx: HeapIdx, size: u64) {
+        loop {
+            let entry = &mut self.heap[idx];
+            entry.size += size;
+            if idx == entry.parent {
+                break;
+            } else {
+                idx = entry.parent;
+            }
+        }
+    }
+
+    fn build_heap_from_input(input: &str) -> anyhow::Result<Self> {
         use Line::*;
 
-        let mut cwd = PathBuf::new();
-        let mut sizes = HashMap::new();
+        let mut heap = DirectoryHeap::new();
+        let mut cwd = heap.cursor;
 
-        for line in input.lines() {
+        // Skip the first line because we have already initialized the heap with root
+        for line in input.lines().skip(1) {
             let line = parse_line(line)?;
 
             match line {
                 Cd(d) if d == ".." => {
-                    cwd.pop();
+                    cwd = heap.get_parent(cwd);
                 }
-                Cd(d) => {
-                    cwd.push(d);
-                    sizes.insert(cwd.clone(), 0);
+                Cd(_) => {
+                    cwd = heap.insert_entry(cwd);
                 }
                 File((file_size, _)) => {
-                    if let Some(size) = sizes.get_mut(&cwd) {
-                        *size += file_size;
-                    }
-
-                    let mut dir = cwd.as_path();
-
-                    while let Some(parent) = dir.parent() {
-                        if let Some(size) = sizes.get_mut(parent) {
-                            *size += file_size;
-                        }
-                        dir = parent
-                    }
+                    heap.update_size(cwd, file_size);
                 }
                 _ => {}
             }
         }
 
-        Ok(Self(sizes))
+        Ok(heap)
     }
-}
 
-fn part_1(sizes: &DirectorySizes) -> u64 {
-    sizes.0.values().filter(|&&size| size <= 100_000).sum()
-}
+    /// Part 1
+    fn part_1(&self) -> u64 {
+        self.heap
+            .iter()
+            .map(|entry| entry.size)
+            .filter(|&size| size <= 100_000)
+            .sum()
+    }
 
-fn part_2(sizes: &DirectorySizes) -> u64 {
-    let disk_space = 70000000;
-    let desired = 30000000;
+    fn part_2(&self) -> u64 {
+        let disk_space = 70_000_000;
+        let desired_free_space = 30_000_000;
+        let used = self.heap[0].size;
+        let unused_space = disk_space - used;
+        let to_free = desired_free_space - unused_space;
 
-    let used = sizes.0.get(&PathBuf::from("/")).unwrap();
-    let unused_space = disk_space - used;
-    let to_free = desired - unused_space;
-
-    sizes
-        .0
-        .values()
-        .filter(|&&size| size >= to_free)
-        .min()
-        .cloned()
-        .unwrap()
+        self.heap
+            .iter()
+            .map(|entry| entry.size)
+            .filter(|&size| size >= to_free)
+            .min()
+            .unwrap()
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -192,15 +230,15 @@ $ ls
 
     #[test]
     fn part_1_works() {
-        let sizes = DirectorySizes::from_terminal_output(TEST_INPUT).unwrap();
+        let heap = DirectoryHeap::build_heap_from_input(TEST_INPUT).unwrap();
 
-        assert_eq!(95437, part_1(&sizes));
+        assert_eq!(95437, heap.part_1());
     }
 
     #[test]
     fn part_2_works() {
-        let sizes = DirectorySizes::from_terminal_output(TEST_INPUT).unwrap();
+        let heap = DirectoryHeap::build_heap_from_input(TEST_INPUT).unwrap();
 
-        assert_eq!(24933642, part_2(&sizes));
+        assert_eq!(24933642, heap.part_2());
     }
 }

@@ -38,13 +38,20 @@ impl<const X: usize, const Y: usize> Forest<X, Y> {
 
         let process_tree = |pos: usize, tree: &mut Tree, tree_line: &mut TreeLine| {
             let furthest_visible = tree_line.furthest_visible((tree.height, pos));
+            // u8::MAX is the sentinel value for the edges of the forest, if this sentinel value is
+            // the furthest visible tree then the current tree must be visible.
             if furthest_visible.0 == u8::MAX {
                 tree.visible = true;
             }
+            // The position of the tree - the position of the furthest visible tree tells us how
+            // many trees are visible
             tree.score *= (pos - furthest_visible.1) as u32;
+            // Push the height and position (calculated as the distance from the start of the
+            // current line) into the tree line
             tree_line.push((tree.height, pos));
         };
 
+        // Allocate a single stack and reset it for each line to avoid repeated allocations
         let mut tree_line = TreeLine::new();
 
         for y in 0..Y {

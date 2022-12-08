@@ -11,6 +11,7 @@ anyhow = "1"
 chumsky = "0.8"
 nom = "7"
 hashbrown = "0.13"
+rayon = "1.6"
 
 [dev-dependencies]
 criterion = { version = "0.4", features = ["html_reports"] }

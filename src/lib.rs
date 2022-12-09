@@ -7,4 +7,5 @@ pub mod day06;
 pub mod day07;
 pub mod day08;
 pub mod day08_par;
+pub mod day09;
 pub mod utils;

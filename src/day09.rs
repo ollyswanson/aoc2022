@@ -65,8 +65,8 @@ impl RopeVector {
         let dy = other.y - self.y;
 
         if dx.abs() > 1 || dy.abs() > 1 {
-            self.x += dx.checked_div(dx.abs()).unwrap_or(0);
-            self.y += dy.checked_div(dy.abs()).unwrap_or(0);
+            self.x += dx.signum();
+            self.y += dy.signum();
         }
     }
 }

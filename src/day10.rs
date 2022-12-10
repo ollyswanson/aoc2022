@@ -1,6 +1,5 @@
 use std::io::{self, Write};
 
-use anyhow::Context;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{i64, newline};
@@ -9,16 +8,22 @@ use nom::multi::many0;
 use nom::sequence::{preceded, terminated};
 use nom::IResult;
 
+/// For use with benchmarks macro
 pub fn run(input: &str) -> anyhow::Result<()> {
+    let mut out = io::sink();
+    run_with(input, &mut out)
+}
+
+/// For use with bin
+pub fn run_with<W: Write>(input: &str, out: &mut W) -> anyhow::Result<()> {
     let instrs = parse_instrs(input)?;
     let mut cpu = Cpu::new();
     let register_vals = cpu.execute(&instrs);
 
     let sum = signal_sum(&register_vals);
-    println!("Part 1: {}", sum);
+    writeln!(out, "Part 1: {}\n", sum)?;
 
-    println!("Part 2:\n");
-    draw(&register_vals)?;
+    draw(&register_vals, out)?;
 
     Ok(())
 }
@@ -31,7 +36,7 @@ fn signal_sum(register_vals: &[i64]) -> i64 {
         .sum()
 }
 
-fn draw(register_vals: &[i64]) -> anyhow::Result<()> {
+fn draw<W: Write>(register_vals: &[i64], out: &mut W) -> anyhow::Result<()> {
     let pixels: Vec<u8> = (0..240)
         .zip(register_vals.iter())
         .map(|(clock, &r)| {
@@ -43,12 +48,13 @@ fn draw(register_vals: &[i64]) -> anyhow::Result<()> {
         })
         .collect();
 
-    let mut out = io::stdout();
     for line in pixels.chunks(40) {
         out.write_all(line)?;
         out.write_all(&[b'\n'])?;
     }
-    out.flush().context("Failed to flush")
+    out.flush()?;
+
+    Ok(())
 }
 
 struct Cpu {

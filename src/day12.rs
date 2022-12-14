@@ -168,7 +168,7 @@ abdefghi";
 
         let part_1 = shortest_path.shortest_path(
             elevation_map.start,
-            |c, n| c + 1 >= n && n != u8::MAX,
+            |c, n| c + 1 >= n,
             move |pos, _| pos == elevation_map.end,
         );
 

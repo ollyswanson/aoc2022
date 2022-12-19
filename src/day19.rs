@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 use std::fmt::Display;
 
 use anyhow::anyhow;
-use hashbrown::HashSet;
+use hashbrown::{HashMap, HashSet};
 use nom::bytes::complete::tag;
 use nom::character::complete::u64;
 use nom::character::streaming::line_ending;
@@ -67,7 +67,7 @@ impl Blueprint {
 }
 
 fn max(blueprint: &Blueprint, time_limit: u64) -> u64 {
-    let mut visited: HashSet<(u64, Resources)> = HashSet::new();
+    let mut visited: HashMap<Resources, u64> = HashMap::new();
     let resources = Resources::new();
 
     let ore_spend = blueprint.ore_spend();
@@ -91,10 +91,6 @@ fn max(blueprint: &Blueprint, time_limit: u64) -> u64 {
             continue;
         }
 
-        if visited.contains(&(time, resources)) {
-            continue;
-        }
-
         if geode_count + resources.geode_robot_count() * time_left + time_left * (time_left + 1) / 2
             < max_geodes
             && resources.obsidian_robot_count() <= obsidian_spend
@@ -102,29 +98,40 @@ fn max(blueprint: &Blueprint, time_limit: u64) -> u64 {
             continue;
         }
 
-        visited.insert((time, resources));
+        if let Some(&at) = visited.get(&resources) {
+            if time >= at {
+                continue;
+            }
+        }
+
+        visited.insert(resources, time);
 
         if time < time_limit {
             let next = resources.tick();
             stack.push((time + 1, next));
 
             let geode_robot = resources.build_geode_robot(blueprint);
-            if !(geode_robot == next) && !visited.contains(&(time + 1, geode_robot)) {
+            if !(geode_robot == next)
+                && *visited.get(&geode_robot).unwrap_or(&time_limit) > time + 1
+            {
                 stack.push((time + 1, geode_robot));
             }
 
             let obsidian_robot = resources.build_obsidian_robot(blueprint);
-            if !(obsidian_robot == next) && !visited.contains(&(time + 1, obsidian_robot)) {
+            if !(obsidian_robot == next)
+                && *visited.get(&obsidian_robot).unwrap_or(&time_limit) > time + 1
+            {
                 stack.push((time + 1, obsidian_robot));
             }
 
             let clay_robot = resources.build_clay_robot(blueprint);
-            if !(clay_robot == next) && !visited.contains(&(time + 1, clay_robot)) {
+            if !(clay_robot == next) && *visited.get(&clay_robot).unwrap_or(&time_limit) > time + 1
+            {
                 stack.push((time + 1, clay_robot));
             }
 
             let ore_robot = resources.build_ore_robot(blueprint);
-            if !(ore_robot == next) && !visited.contains(&(time + 1, ore_robot)) {
+            if !(ore_robot == next) && *visited.get(&ore_robot).unwrap_or(&time_limit) > time + 1 {
                 stack.push((time + 1, ore_robot));
             }
         }
@@ -371,6 +378,7 @@ mod tests {
             geode_robot: 2 | (7 << 32),
         };
 
+        assert!(None < Some(5));
         assert_eq!(9, max(&blueprint, 24));
     }
 }

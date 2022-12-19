@@ -91,9 +91,11 @@ fn max(blueprint: &Blueprint, time_limit: u64) -> u64 {
             continue;
         }
 
-        if geode_count + resources.geode_robot_count() * time_left + time_left * (time_left + 1) / 2
-            < max_geodes
-            && resources.obsidian_robot_count() <= obsidian_spend
+        if time_left > 0
+            && geode_count
+                + resources.geode_robot_count() * time_left
+                + time_left * (time_left - 1) / 2
+                < max_geodes
         {
             continue;
         }
@@ -108,7 +110,12 @@ fn max(blueprint: &Blueprint, time_limit: u64) -> u64 {
 
         if time < time_limit {
             let next = resources.tick();
-            stack.push((time + 1, next));
+            if !(resources.obsidian_count() >= obsidian_spend
+                && resources.clay_count() >= clay_spend
+                && resources.ore_count() >= ore_spend)
+            {
+                stack.push((time + 1, next));
+            }
 
             let geode_robot = resources.build_geode_robot(blueprint);
             if !(geode_robot == next)

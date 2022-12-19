@@ -110,8 +110,6 @@ fn flood_fill(cubes: &HashSet<Point>) -> HashSet<Point> {
         },
     );
 
-    dbg!(&bounding_box);
-
     let mut visited = HashSet::new();
     let starting_point = Point { x: 0, y: 0, z: 0 };
     let mut stack = Vec::new();

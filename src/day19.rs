@@ -30,10 +30,8 @@ const CLAY: usize = 1;
 const OBSIDIAN: usize = 2;
 const GEODE: usize = 3;
 
-type OreCost = u16;
-
 #[derive(Debug, Clone, Copy)]
-struct RobotRecipe([OreCost; 4]);
+struct RobotRecipe([u16; 4]);
 
 // Blueprint 1:
 //   Each ore robot costs 4 ore.
@@ -43,61 +41,44 @@ struct RobotRecipe([OreCost; 4]);
 struct Blueprint([RobotRecipe; 4]);
 
 impl Blueprint {
-    #[inline]
-    fn max_ore_cost(&self) -> u16 {
-        self.0
-            .iter()
-            .map(|robot_recipe| robot_recipe.0[ORE])
-            .max()
-            .unwrap()
-    }
-
-    #[inline]
-    fn max_clay_cost(&self) -> u16 {
-        self.0
-            .iter()
-            .map(|robot_recipe| robot_recipe.0[CLAY])
-            .max()
-            .unwrap()
-    }
-
-    #[inline]
-    fn max_obsidian_cost(&self) -> u16 {
-        self.0
-            .iter()
-            .map(|robot_recipe| robot_recipe.0[OBSIDIAN])
-            .max()
-            .unwrap()
+    fn max_material_costs(&self) -> [u16; 4] {
+        self.0.iter().fold([0; 4], |acc, recipe| {
+            [
+                acc[ORE].max(recipe.0[ORE]),
+                acc[CLAY].max(recipe.0[CLAY]),
+                acc[OBSIDIAN].max(recipe.0[OBSIDIAN]),
+                u16::MAX, // Set to sentinel value
+            ]
+        })
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 struct Resources {
     robots: [u16; 4],
-    ores: [u16; 4],
+    materials: [u16; 4],
 }
 
 impl Resources {
     fn new() -> Self {
         Self {
             robots: [1, 0, 0, 0],
-            ores: [0, 0, 0, 0],
+            materials: [0, 0, 0, 0],
         }
     }
 
     fn tick(mut self, amount: u16) -> Self {
-        self.ores[ORE] += self.robots[ORE] * amount;
-        self.ores[CLAY] += self.robots[CLAY] * amount;
-        self.ores[OBSIDIAN] += self.robots[OBSIDIAN] * amount;
-        self.ores[GEODE] += self.robots[GEODE] * amount;
+        self.materials[ORE] += self.robots[ORE] * amount;
+        self.materials[CLAY] += self.robots[CLAY] * amount;
+        self.materials[OBSIDIAN] += self.robots[OBSIDIAN] * amount;
+        self.materials[GEODE] += self.robots[GEODE] * amount;
         self
     }
+
     /// How many turns do we have to wait to build the given robot?
     fn wait(&self, idx: usize, blueprint: &Blueprint) -> Option<u16> {
         let costs = blueprint.0[idx];
         let mut max = 0;
-
-        // recipe[ore_type] - state.ores[ore_type] + state.robots[ore_type] - 1) / state.robots[ore_type]
 
         for cost in costs
             .0
@@ -106,9 +87,8 @@ impl Resources {
             .filter(|(_, &cost)| cost > 0)
             .map(|(i, cost)| match self.robots[i] {
                 0 => None,
-                _ if self.ores[i] >= *cost => Some(0),
-                // n => Some((cost - self.ores[i]) / n + 1),
-                n => Some((cost - self.ores[i] + n - 1) / n),
+                _ if self.materials[i] >= *cost => Some(0),
+                n => Some((cost - self.materials[i] + n - 1) / n),
             })
         {
             let cost = cost?;
@@ -120,9 +100,9 @@ impl Resources {
 
     fn build_robot(mut self, idx: usize, blueprint: &Blueprint) -> Self {
         let costs = blueprint.0[idx].0;
-        self.ores[ORE] -= costs[ORE];
-        self.ores[CLAY] -= costs[CLAY];
-        self.ores[OBSIDIAN] -= costs[OBSIDIAN];
+        self.materials[ORE] -= costs[ORE];
+        self.materials[CLAY] -= costs[CLAY];
+        self.materials[OBSIDIAN] -= costs[OBSIDIAN];
         self.robots[idx] += 1;
         self
     }
@@ -131,45 +111,44 @@ impl Resources {
 fn max(blueprint: &Blueprint, time_limit: u16) -> u16 {
     let resources = Resources::new();
 
-    let max_ore_cost = blueprint.max_ore_cost();
-    let max_clay_cost = blueprint.max_clay_cost();
-    let max_obsidian_cost = blueprint.max_obsidian_cost();
+    let max_material_costs = blueprint.max_material_costs();
 
     let mut stack: Vec<(u16, Resources)> = Vec::new();
     stack.push((0, resources));
     let mut max_geodes = 0;
 
     while let Some((time, resources)) = stack.pop() {
-        if resources.robots[ORE] > max_ore_cost
-            || resources.robots[CLAY] > max_clay_cost
-            || resources.robots[OBSIDIAN] > max_obsidian_cost
-        {
-            continue;
-        }
-
-        max_geodes = max_geodes.max(resources.ores[GEODE]);
-
         let time_left = time_limit - time;
 
-        if time_left > 0
-            && resources.ores[GEODE]
-                + resources.robots[GEODE] * time_left
-                + time_left * (time_left - 1) / 2
-                + 1
-                < max_geodes
-        {
-            continue;
-        }
+        max_geodes = max_geodes.max(resources.materials[GEODE]);
 
         if time_left > 0 {
+            #[allow(clippy::needless_range_loop)]
             for idx in 0..=3 {
                 if let Some(wait) = resources.wait(idx, blueprint) {
                     if wait >= time_left {
                         max_geodes = max_geodes
-                            .max(resources.ores[GEODE] + resources.robots[GEODE] * time_left);
+                            .max(resources.materials[GEODE] + resources.robots[GEODE] * time_left);
                     } else {
                         let resources = resources.tick(wait + 1);
-                        stack.push((time + wait + 1, resources.build_robot(idx, blueprint)));
+                        let resources = resources.build_robot(idx, blueprint);
+                        let time_left = time_left - wait - 1;
+
+                        if resources.robots[idx] > max_material_costs[idx] {
+                            continue;
+                        }
+
+                        if time_left > 0
+                            && resources.materials[GEODE]
+                                + resources.robots[GEODE] * time_left
+                                + time_left * (time_left - 1) / 2
+                                + 1
+                                < max_geodes
+                        {
+                            continue;
+                        }
+
+                        stack.push((time + wait + 1, resources));
                     }
                 }
             }

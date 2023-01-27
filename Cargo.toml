@@ -12,6 +12,7 @@ chumsky = "0.8"
 nom = "7"
 hashbrown = "0.13"
 rayon = "1.6"
+rustc-hash = "1.1.0"
 
 [dev-dependencies]
 criterion = { version = "0.4", features = ["html_reports"] }

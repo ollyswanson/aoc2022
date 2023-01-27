@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use nom::bytes::complete::tag;
+use nom::character::complete::line_ending;
 use nom::character::complete::u16;
-use nom::character::streaming::line_ending;
 use nom::combinator::map;
 use nom::multi::separated_list0;
 use nom::sequence::{delimited, preceded, separated_pair, tuple};
